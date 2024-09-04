@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Listing</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0 150px 0 150px;
+        }
+
+        h1 {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #productTable_wrapper {
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        table.dataTable {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+
+        table.dataTable thead th {
+            background-color: #007bff;
+            color: #fff;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px;
+        }
+
+        table.dataTable tbody td {
+            text-align: center; /* Center align text in table cells */
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        table.dataTable tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .variations {
+            font-family: monospace;
+            white-space: pre-wrap; /* Preserve formatting for line breaks */
+            display: inline-block;
+            text-align: center; /* Center align table within the cell */
+        }
+
+        .variations table {
+           display: flex;
+           align-self: center;
+            border-collapse: collapse;
+        }
+
+        .variations th, .variations td {
+            border: 1px solid #dee2e6;
+            padding: 4px 8px;
+        }
+
+        .variations th {
+            background-color: #f8f9fa;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            background-color: #fff;
+            color: #007bff;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        /* Column widths */
+        table.dataTable thead th.slno {
+            width: 5%;
+        }
+
+        table.dataTable thead th.product_name {
+            width: 25%;
+        }
+
+        table.dataTable thead th.product_lowest_price {
+            width: 15%;
+        }
+
+        table.dataTable thead th.variations_stock {
+            width: 15%;
+        }
+
+        table.dataTable thead th.last_updated {
+            width: 20%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Products Listing</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button id="uploadProductsBtn" class="btn btn-primary" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Upload Products
+        </button>
+    </div>
+    <table id="productTable" class="display">
+        <thead>
+            <tr>
+                <th class="slno">Sl No</th>
+                <th class="product_name">Product Name</th>
+                <th class="product_lowest_price">Lowest Price</th>
+                <th class="variations_stock">Variations & Stock</th>
+                <th class="last_updated">Last Updated</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var table = $('#productTable').DataTable({
+                "ajax": {
+                    "url": "products/",   //api endpoint to fetch product details
+                    "dataSrc": "",   
+                    "complete": function(xhr) {
+                        var data = xhr.responseJSON;    //making subtables for better readability
+                        data.forEach(function(product) {
+                            if (product.variations.length > 0) {
+                                product.variations_stock = `<table>
+                                    <thead>
+                                        <tr><th>Variation</th><th>Stock</th></tr>
+                                    </thead>
+                                    <tbody>` + 
+                                    product.variations.map(function(variation) {
+                                        return `<tr><td>${variation.variation_text}</td><td>${variation.stock}</td></tr>`;
+                                    }).join('') + 
+                                    `</tbody></table>`;
+                            } else {
+                                product.variations_stock = "-";
+                            }
+                        });
+
+                        table.clear();
+                        table.rows.add(data).draw();
+                    },
+                },
+                "columns": [
+                    { "data": "id", "className": "slno" },
+                    { "data": "product_name", "className": "product_name" },
+                    { "data": "product_lowest_price", "className": "product_lowest_price", "render": $.fn.dataTable.render.number(',', '.', 2, '$') },
+                    { "data": "variations_stock", "className": "variations_stock" },
+                    { "data": "last_updated", "className": "last_updated", "render": function(data) {
+                        var date = new Date(data);
+                        var day = date.getDate();
+                        var month = date.toLocaleString('en-US', { month: 'long' });
+                        var year = date.getFullYear();
+                        var hours = date.getHours();
+                        var minutes = date.getMinutes();
+                        var ampm = hours >= 12 ? 'PM' : 'AM';
+                        hours = hours % 12;
+                        hours = hours ? hours : 12;
+                        minutes = minutes < 10 ? '0' + minutes : minutes;
+
+                        // checking for Ordinal suffixes
+                        var suffix = (day % 10 === 1 && day !== 11) ? 'st' : 
+                                     (day % 10 === 2 && day !== 12) ? 'nd' : 
+                                     (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+
+                        return `${day}${suffix} ${month} ${year} ${hours}:${minutes} ${ampm} IST`;  //returning date in combined form
+                    }},
+                ],
+                columnDefs: [{
+                    "defaultContent": "-",
+                    "targets": "_all"        //populating with - when empty
+                }],
+                "error": function (xhr, error, thrown) {
+                    console.error('DataTables Error:', error);
+                }
+            });
+        });
+        $('#uploadProductsBtn').on('click', function() {
+            window.location.href = 'upload-products/';
+        });
+    </script>
+</body>
+</html>

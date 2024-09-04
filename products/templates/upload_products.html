@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Excel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .file-upload-container {
+            border: 2px dashed #ccc;
+            border-radius: 6px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-container:hover {
+            background-color: #f9f9f9;
+        }
+
+        .file-upload-container.dragover {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+
+        .file-upload-container p {
+            color: #777;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <form id="upload-form" method="post" enctype="multipart/form-data">
+        <h1>Upload Excel File</h1>
+        {% csrf_token %}
+        <div id="file-upload-container" class="file-upload-container">
+            <p>Drag and drop your Excel file here or click to select</p>
+            <input type="file" id="excel-file" name="excel_file" accept=".xls, .xlsx" required>
+        </div>
+        <button type="submit">Upload</button>
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileUploadContainer = document.getElementById('file-upload-container');
+            const fileInput = document.getElementById('excel-file');
+        
+           
+            let fileInputClicked = false;
+        
+         
+            fileUploadContainer.addEventListener('click', () => {
+                if (!fileInputClicked) {
+                    fileInputClicked = true;
+                    fileInput.click();
+                }
+            });
+        
+         
+            fileInput.addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    fileUploadContainer.querySelector('p').textContent = event.target.files[0].name;
+                }
+                // Reset the flag after file selection
+                fileInputClicked = false;
+            });
+        
+            // Drag over event to highlight the drop area
+            fileUploadContainer.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                fileUploadContainer.classList.add('dragover');
+            });
+        
+            // Drag leave event to remove the highlight
+            fileUploadContainer.addEventListener('dragleave', () => {
+                fileUploadContainer.classList.remove('dragover');
+            });
+        
+            // Drop event to handle the dropped files
+            fileUploadContainer.addEventListener('drop', (event) => {
+                event.preventDefault();
+                fileUploadContainer.classList.remove('dragover');
+        
+                const files = event.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files; // This line may not work in all browsers, but is useful in many cases
+                    fileUploadContainer.querySelector('p').textContent = files[0].name;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
